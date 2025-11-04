@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/index.tsx","./src/components/board.tsx","./src/components/box.tsx","./src/components/controls.tsx","./src/components/dot.tsx","./src/components/edge.tsx","./src/components/scoreboard.tsx","./src/hooks/useai.ts","./src/hooks/usegamestate.ts","./src/utils/ai.ts","./src/utils/rules.ts"],"version":"5.9.3"}
