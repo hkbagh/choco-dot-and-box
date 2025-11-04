@@ -8,12 +8,14 @@ interface OnlineProps {
   me: 0 | 1 | null
   pin: string
   setPin: (v: string) => void
+  name: string
+  setName: (v: string) => void
   onCreate: () => void
   onJoin: () => void
   onLeave: () => void
 }
 
-export default function OnlinePanel({ mode, status, role, me, pin, setPin, onCreate, onJoin, onLeave }: OnlineProps) {
+export default function OnlinePanel({ mode, status, role, me, pin, setPin, name, setName, onCreate, onJoin, onLeave }: OnlineProps) {
   const disabled = mode !== 'online'
   const validPin = /^\d{4}$/.test(pin)
   return (
@@ -25,6 +27,17 @@ export default function OnlinePanel({ mode, status, role, me, pin, setPin, onCre
         ) : (
           <span className="legend">{disabled ? 'Switch mode to Online' : 'Enter PIN'}</span>
         )}
+      </div>
+      <div className="row space">
+        <label htmlFor="name">Name</label>
+        <input
+          id="name"
+          className="select"
+          placeholder="Your name"
+          value={name}
+          onChange={(e) => setName(e.target.value.slice(0, 24))}
+          disabled={disabled || status === 'connected'}
+        />
       </div>
       <div className="row space">
         <label htmlFor="pin">PIN</label>
@@ -40,8 +53,8 @@ export default function OnlinePanel({ mode, status, role, me, pin, setPin, onCre
         />
       </div>
       <div className="row">
-        <button className="btn" onClick={onCreate} disabled={disabled || status === 'connected' || !validPin}>Create</button>
-        <button className="btn" onClick={onJoin} disabled={disabled || status === 'connected' || !validPin}>Join</button>
+        <button className="btn" onClick={onCreate} disabled={disabled || status === 'connected' || !validPin || !name}>Create</button>
+        <button className="btn" onClick={onJoin} disabled={disabled || status === 'connected' || !validPin || !name}>Join</button>
       </div>
       <div className="row">
         <span className="legend">
@@ -54,4 +67,3 @@ export default function OnlinePanel({ mode, status, role, me, pin, setPin, onCre
     </div>
   )
 }
-

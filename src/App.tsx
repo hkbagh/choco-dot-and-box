@@ -13,6 +13,8 @@ export default function App() {
   const { chooseMove } = useAI(state.aiLevel)
   const [aiThinking, setAiThinking] = React.useState(false)
   const [pin, setPin] = React.useState('')
+  const [name, setName] = React.useState('')
+  const meIdRef = React.useRef<string | null>(null)
   const room = useRoom((msg: RoomMessage) => {
     switch (msg.type) {
       case 'move': {
@@ -146,8 +148,29 @@ export default function App() {
           me={room.me}
           pin={pin}
           setPin={setPin}
-          onCreate={() => /^\d{4}$/.test(pin) && room.create(pin)}
-          onJoin={() => /^\d{4}$/.test(pin) && room.join(pin)}
+          name={name}
+          setName={setName}
+          onCreate={async () => {
+            if (!/^\d{4}$/.test(pin) || !name) return
+            // call backend to create
+            try {
+              const res = await import('./lib/backend').then(m => m.createRoom(name, pin, state.boardSize))
+              meIdRef.current = res.me.id
+              room.create(pin)
+            } catch (e) {
+              console.error(e)
+            }
+          }}
+          onJoin={async () => {
+            if (!/^\d{4}$/.test(pin) || !name) return
+            try {
+              const res = await import('./lib/backend').then(m => m.joinRoom(name, pin))
+              meIdRef.current = res.me.id
+              room.join(pin)
+            } catch (e) {
+              console.error(e)
+            }
+          }}
           onLeave={() => room.leave()}
         />
         <div className="panel board-wrap">
