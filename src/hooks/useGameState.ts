@@ -1,7 +1,7 @@
 import { useReducer } from 'react'
 import { GameState, Move, SerializedState, applyMove, cloneState, createInitialState, isGameOver, isValidMove, reviveState } from '../utils/rules'
 
-export type Mode = 'pvp' | 'pvai'
+export type Mode = 'pvp' | 'pvai' | 'online'
 export type Level = 'easy' | 'medium' | 'hard'
 
 export type Action =
@@ -13,6 +13,7 @@ export type Action =
   | { type: 'SET_MODE'; mode: Mode }
   | { type: 'SET_AI_LEVEL'; level: Level }
   | { type: 'SET_HINT'; edgeKey: string | null }
+  | { type: 'LOAD'; snapshot: SerializedState }
 
 function reducer(state: GameState, action: Action): GameState {
   switch (action.type) {
@@ -60,6 +61,10 @@ function reducer(state: GameState, action: Action): GameState {
     }
     case 'SET_HINT': {
       return { ...state, hint: action.edgeKey }
+    }
+    case 'LOAD': {
+      const revived = reviveState(action.snapshot)
+      return { ...revived, history: [], future: [] }
     }
     default:
       return state

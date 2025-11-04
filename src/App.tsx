@@ -2,18 +2,57 @@ import React from 'react'
 import Board from './components/Board'
 import Controls from './components/Controls'
 import Scoreboard from './components/Scoreboard'
+import OnlinePanel from './components/Online'
 import { useGameState } from './hooks/useGameState'
-import { Move, GameState, isGameOver, moveKey } from './utils/rules'
+import { Move, GameState, isGameOver, moveKey, cloneState, reviveState } from './utils/rules'
 import { useAI } from './hooks/useAI'
+import { useRoom, type RoomMessage } from './online/useRoom'
 
 export default function App() {
   const { state, dispatch } = useGameState(5, 'pvp', 'easy')
   const { chooseMove } = useAI(state.aiLevel)
   const [aiThinking, setAiThinking] = React.useState(false)
+  const [pin, setPin] = React.useState('')
+  const room = useRoom((msg: RoomMessage) => {
+    switch (msg.type) {
+      case 'move': {
+        dispatch({ type: 'PLACE_EDGE', move: msg.move })
+        break
+      }
+      case 'sync': {
+        dispatch({ type: 'LOAD', snapshot: msg.state })
+        break
+      }
+      case 'reset': {
+        dispatch({ type: 'RESET' })
+        break
+      }
+      case 'set_board_size': {
+        dispatch({ type: 'SET_BOARD_SIZE', size: msg.size })
+        break
+      }
+      case 'undo': {
+        dispatch({ type: 'UNDO' })
+        break
+      }
+      case 'redo': {
+        dispatch({ type: 'REDO' })
+        break
+      }
+    }
+  })
 
   const over = isGameOver(state)
 
-  const onPlace = (m: Move) => dispatch({ type: 'PLACE_EDGE', move: m })
+  const onPlace = (m: Move) => {
+    if (state.mode === 'online') {
+      if (room.me !== state.currentPlayer) return
+      dispatch({ type: 'PLACE_EDGE', move: m })
+      room.send({ type: 'move', move: m })
+      return
+    }
+    dispatch({ type: 'PLACE_EDGE', move: m })
+  }
 
   // AI turn
   React.useEffect(() => {
@@ -31,11 +70,32 @@ export default function App() {
     return () => { cancelled = true; clearTimeout(t) }
   }, [state, chooseMove, dispatch])
 
-  const onNew = () => dispatch({ type: 'RESET' })
-  const onUndo = () => dispatch({ type: 'UNDO' })
-  const onRedo = () => dispatch({ type: 'REDO' })
-  const onBoardSize = (n: number) => dispatch({ type: 'SET_BOARD_SIZE', size: n })
-  const onMode = (m: 'pvp' | 'pvai') => dispatch({ type: 'SET_MODE', mode: m })
+  const onNew = () => {
+    if (state.mode === 'online') {
+      if (room.role !== 'host') return
+      dispatch({ type: 'RESET' })
+      room.send({ type: 'reset' })
+      room.send({ type: 'sync', state: cloneState({ ...state, edges: new Set(), boxes: {} as any, scores: [0,0], currentPlayer: 0 }) })
+      return
+    }
+    dispatch({ type: 'RESET' })
+  }
+  const onUndo = () => {
+    if (state.mode === 'online' && room.role !== 'host') return
+    dispatch({ type: 'UNDO' })
+    if (state.mode === 'online') room.send({ type: 'undo' })
+  }
+  const onRedo = () => {
+    if (state.mode === 'online' && room.role !== 'host') return
+    dispatch({ type: 'REDO' })
+    if (state.mode === 'online') room.send({ type: 'redo' })
+  }
+  const onBoardSize = (n: number) => {
+    if (state.mode === 'online' && room.role !== 'host') return
+    dispatch({ type: 'SET_BOARD_SIZE', size: n })
+    if (state.mode === 'online') room.send({ type: 'set_board_size', size: n })
+  }
+  const onMode = (m: 'pvp' | 'pvai' | 'online') => dispatch({ type: 'SET_MODE', mode: m })
   const onLevel = (l: 'easy' | 'medium' | 'hard') => dispatch({ type: 'SET_AI_LEVEL', level: l })
 
   const onHint = () => {
@@ -58,7 +118,11 @@ export default function App() {
     <div className="app">
       <header className="header">
         <h1 className="title">Dots & Boxes</h1>
-        <div className="legend">{state.mode === 'pvai' ? (aiThinking ? 'AI thinking…' : 'Your turn') : 'Local PvP'}</div>
+        <div className="legend">
+          {state.mode === 'pvai' ? (aiThinking ? 'AI thinking…' : 'Your turn') :
+            state.mode === 'online' ? (room.status === 'connected' ? (room.me === state.currentPlayer ? 'Your turn' : 'Opponent turn') : 'Online') :
+            'Local PvP'}
+        </div>
       </header>
       <main className="container">
         <Controls
@@ -74,6 +138,17 @@ export default function App() {
           onBoardSize={onBoardSize}
           onMode={onMode}
           onLevel={onLevel}
+        />
+        <OnlinePanel
+          mode={state.mode}
+          status={room.status}
+          role={room.role}
+          me={room.me}
+          pin={pin}
+          setPin={setPin}
+          onCreate={() => /^\d{4}$/.test(pin) && room.create(pin)}
+          onJoin={() => /^\d{4}$/.test(pin) && room.join(pin)}
+          onLeave={() => room.leave()}
         />
         <div className="panel board-wrap">
           <Board state={state as GameState} onPlace={onPlace} />

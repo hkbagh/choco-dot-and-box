@@ -3,11 +3,11 @@ import React from 'react'
 interface ScoreboardProps {
   scores: number[]
   currentPlayer: number
-  mode: 'pvp' | 'pvai'
+  mode: 'pvp' | 'pvai' | 'online'
 }
 
 export default function Scoreboard({ scores, currentPlayer, mode }: ScoreboardProps) {
-  const p2Label = mode === 'pvai' ? 'AI' : 'P2'
+  const p2Label = mode === 'pvai' ? 'AI' : mode === 'online' ? 'Remote' : 'P2'
   return (
     <div className="panel scoreboard" aria-label="Scoreboard">
       <div className={`score ${currentPlayer === 0 ? 'active' : ''}`}>
@@ -27,4 +27,3 @@ export default function Scoreboard({ scores, currentPlayer, mode }: ScoreboardPr
     </div>
   )
 }
-

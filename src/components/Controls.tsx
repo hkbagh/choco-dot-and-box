@@ -2,7 +2,7 @@ import React from 'react'
 
 interface ControlsProps {
   boardSize: number
-  mode: 'pvp' | 'pvai'
+  mode: 'pvp' | 'pvai' | 'online'
   aiLevel: 'easy' | 'medium' | 'hard'
   canUndo: boolean
   canRedo: boolean
@@ -11,7 +11,7 @@ interface ControlsProps {
   onRedo: () => void
   onHint: () => void
   onBoardSize: (n: number) => void
-  onMode: (m: 'pvp' | 'pvai') => void
+  onMode: (m: 'pvp' | 'pvai' | 'online') => void
   onLevel: (l: 'easy' | 'medium' | 'hard') => void
 }
 
@@ -41,6 +41,7 @@ export default function Controls(props: ControlsProps) {
         <select id="mode" className="select" value={mode} onChange={(e) => onMode(e.target.value as any)}>
           <option value="pvp">Player vs Player</option>
           <option value="pvai">Player vs AI</option>
+          <option value="online">Online</option>
         </select>
       </div>
       {mode === 'pvai' && (
@@ -56,4 +57,3 @@ export default function Controls(props: ControlsProps) {
     </div>
   )
 }
-

@@ -8,7 +8,7 @@ export interface SerializedState {
   boxes: Record<string, number | null>
   currentPlayer: number
   scores: number[]
-  mode: 'pvp' | 'pvai'
+  mode: 'pvp' | 'pvai' | 'online'
   aiLevel: 'easy' | 'medium' | 'hard'
   hint: string | null
 }
@@ -19,7 +19,7 @@ export interface GameState {
   boxes: Record<string, number | null>
   currentPlayer: number
   scores: number[]
-  mode: 'pvp' | 'pvai'
+  mode: 'pvp' | 'pvai' | 'online'
   aiLevel: 'easy' | 'medium' | 'hard'
   history: SerializedState[]
   future: SerializedState[]
